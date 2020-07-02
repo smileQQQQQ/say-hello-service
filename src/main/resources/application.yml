@@ -1,0 +1,14 @@
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8761/eureka/
+server:
+  port: 8762
+spring:
+  application:
+    name: say-hello-service
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://192.168.1.8:3306/eshop?useUnicode=yes&characterEncoding=UTF-8&useSSL=false
+    username: eshop
+    password: eshop
