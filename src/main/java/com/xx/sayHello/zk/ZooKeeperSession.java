@@ -10,9 +10,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
-import org.redisson.Redisson;
-import org.redisson.api.RedissonClient;
-import org.redisson.config.Config;
 
 public class ZooKeeperSession {
 	
@@ -93,44 +90,27 @@ public class ZooKeeperSession {
     }
 
     private static ZooKeeperSession instance = new ZooKeeperSession();
-
     public static ZooKeeperSession getInstance() {
         return instance;
     }
 
+    
     public static void main(String[] args) throws InterruptedException {
-    	
-    	
-    	Config config = new Config();
-		config.useClusterServers()
-		// cluster state scan interval in milliseconds
-		.setScanInterval(200000)
-		.addNodeAddress("redis://192.168.1.5:7001", "redis://192.168.1.7:7005")
-		.addNodeAddress("redis://192.168.1.6:7003").setPassword("redis-pass");
-		RedissonClient redisson = Redisson.create(config);
-    	
-    	
         ZooKeeperSession instance = ZooKeeperSession.getInstance();
         CountDownLatch downLatch = new CountDownLatch(2);
         IntStream.of(1, 2).forEach(i -> new Thread(() -> {
             instance.acquireDistributedLock(1L);
-            
-//        	RLock lock = redisson.getLock("productInventory_Lock_1");
-//    		lock.lock(11,TimeUnit.SECONDS);
-            
             System.out.println(Thread.currentThread().getName() + " 得到锁并休眠 10 秒");
             try {
-                TimeUnit.SECONDS.sleep(3);
+                TimeUnit.SECONDS.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-//            lock.unlock();
-            
             instance.releaseDistributedLock(1L);
             System.out.println(Thread.currentThread().getName() + " 释放锁");
             downLatch.countDown();
         }).start());
-        System.out.println("123");
         downLatch.await();
     }
+    
 }
