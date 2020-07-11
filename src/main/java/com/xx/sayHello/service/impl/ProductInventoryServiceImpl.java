@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +16,6 @@ import com.xx.sayHello.dao.RedisDAO;
 import com.xx.sayHello.mapper.ProductInventoryMapper;
 import com.xx.sayHello.model.ProductInventory;
 import com.xx.sayHello.service.ProductInventoryService;
-import com.xx.sayHello.zk.ZooKeeperSession;
 
 /**
  * 商品库存Service实现类
@@ -31,6 +32,10 @@ public class ProductInventoryServiceImpl implements ProductInventoryService {
 
 	@Autowired
 	public RedissonClient redissonClient;
+	
+    @Autowired
+    private CuratorFramework curatorFramework;
+	
 
 	public void updateProductInventory(ProductInventory productInventory) {
 		productInventoryMapper.updateProductInventory(productInventory); 
@@ -43,24 +48,34 @@ public class ProductInventoryServiceImpl implements ProductInventoryService {
 	 * @param productInventory
 	 */
 	public void testUpdateDBLock(ProductInventory productInventory) {
-//		//获取锁zk
+		//只测试 productInventory_Lock_1
+		String lockString = "productInventory_Lock_1";
+		//获取锁zk
 //		 ZooKeeperSession zks = ZooKeeperSession.getInstance();
 //       zks.acquireDistributedLock(productInventory.getProductId().longValue());
-		//只测试productInventory_Lock_1
-		RLock lock = redissonClient.getLock("productInventory_Lock_1");
 		
-		Boolean cacheRes = true;
+		//获取锁redisson
+        RLock lock = redissonClient.getLock(lockString);
+		
+		//获取锁zkCurator
+//		 distributedLockByZookeeper.acquireDistributedLock(lockString);
+		 //InterProcessMutex这个锁为可重入锁  zkCurator
+//	     InterProcessMutex interProcessMutex = new InterProcessMutex(curatorFramework,"/locks");
+	     
+//		 System.out.println("获取锁，第"+productInventory.getInventoryCnt()+"请求");
+		Boolean cacheRes =true ;
+		//尝试获取锁，最多等待5秒
 		try {
+//			 cacheRes = interProcessMutex.acquire(5, TimeUnit.SECONDS);
 			//第一个参数30s=表示尝试获取分布式锁，并且最大的等待获取锁的时间为30s
 			//第二个参数10s=表示上锁之后，10s内操作完毕将自动释放锁
-//			cacheRes = lock.tryLock(30,10,TimeUnit.SECONDS);
+			cacheRes = lock.tryLock(30,10,TimeUnit.SECONDS);
 //			System.out.println("获取锁"+lock.getName() +",获取状态："+cacheRes);
 			if(cacheRes){
 				//测试并发
 				ProductInventory productInventoryRedis = this.findProductInventory(productInventory.getProductId());
 				Long inventoryCnt= productInventoryRedis.getInventoryCnt();
 				productInventory.setInventoryCnt(inventoryCnt+1L);
-
 				productInventoryMapper.updateProductInventory(productInventory); 
 			}
 		} catch (Exception e) {
@@ -68,7 +83,20 @@ public class ProductInventoryServiceImpl implements ProductInventoryService {
 		}finally {
 			//释放锁
 //			zks.releaseDistributedLock(productInventory.getProductId().longValue());
+			
+			//redisson释放锁
 			lock.unlock();
+			
+//			distributedLockByZookeeper.releaseDistributedLock(lockString);
+			
+			 //zkCurator释放锁
+//			try {
+//				interProcessMutex.release();
+//			} catch (Exception e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+			 System.out.println("释放锁");
 		}
 		System.out.println("===========日志===========: 已修改数据库中的库存，商品id=" + productInventory.getProductId() + ", 商品库存数量=" + productInventory.getInventoryCnt());
 	}

@@ -9,41 +9,10 @@ public class LockTest {
 
 
 	public static void main(String[] args) throws InterruptedException {
-		CountDownLatch downLatch = new CountDownLatch(50);
-//		IntStream.of(1, 2).forEach(i -> new Thread(() -> {
-//			System.out.println(Thread.currentThread().getName() + " 得到锁并休眠 1秒");
-//			try {
-//				TimeUnit.SECONDS.sleep(1);
-//				System.out.println(i);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			//	            instance.releaseDistributedLock(1L);
-//			System.out.println(Thread.currentThread().getName() + " 释放锁");
-//			downLatch.countDown();
-//		}).start());
-//		downLatch.await();
-//
-//
-//		new Thread(() -> {
-//			System.out.println(Thread.currentThread().getName() + " 得到锁并休眠 1秒");
-//			try {
-//				TimeUnit.SECONDS.sleep(1);
-//				System.out.println();
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//			//	            instance.releaseDistributedLock(1L);
-//			System.out.println(Thread.currentThread().getName() + " 释放锁");
-//			downLatch.countDown();
-//		}).start();
 		 concurrenceTest();
 	}
-
 	
 	 public static void concurrenceTest() {
-		 	
-		 
 	        /**
 	         * 模拟高并发情况代码
 	         */
@@ -73,13 +42,11 @@ public class LockTest {
 	                });
 	                countDownLatch.countDown();
 	            }
-	        	
 //	        	String result = HttpClient4.doGet("http://localhost:8764/getProductInventory?productId=1");
 //	        	System.out.println(result);
 	            countDownLatch2.await();// 保证所有线程执行完
 	            System.out.println(atomicInteger);
 	            System.out.println( count.getI());
-	           
 	            executorService.shutdown();
 	        }catch (Exception e){
 	            e.printStackTrace();

@@ -10,6 +10,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
 
 public class ZooKeeperSession {
 	
@@ -28,6 +29,9 @@ public class ZooKeeperSession {
                 if (state == Watcher.Event.KeeperState.SyncConnected) {
                     System.out.println("zookeeper 已连接");
                     connectedSemaphore.countDown();
+                }
+                if (this.connectedSemaphore != null) {
+                    this.connectedSemaphore.countDown();
                 }
             });
         } catch (IOException e) {
@@ -60,7 +64,14 @@ public class ZooKeeperSession {
             int count = 0;
             while (true) {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(20);
+//                    TimeUnit.MILLISECONDS.sleep(20);
+                    Stat stat = zookeeper.exists(path, true);
+                    System.out.println("stat"+stat);
+                    if (stat != null) {
+                        this.connectedSemaphore = new CountDownLatch(1);
+                        this.connectedSemaphore.await(20, TimeUnit.MILLISECONDS);
+                        this.connectedSemaphore = null;
+                    }
                     // 休眠 20 毫秒后再次尝试创建
                     zookeeper.create(path, data, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
                 } catch (Exception e1) {

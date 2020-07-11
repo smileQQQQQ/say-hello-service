@@ -1,6 +1,7 @@
 package com.xx.sayHello;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -20,6 +21,7 @@ import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.netflix.hystrix.dashboard.EnableHystrixDashboard;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -39,8 +41,8 @@ import redis.clients.jedis.JedisCluster;
 @EnableHystrixDashboard
 @EnableCircuitBreaker
 
-@EnableAutoConfiguration
-@ComponentScan
+//@EnableAutoConfiguration
+//@ComponentScan
 @MapperScan("com.xx.sayHello.mapper")
 public class SayHelloServiceApplication {
 
@@ -69,23 +71,37 @@ public class SayHelloServiceApplication {
         return new DataSourceTransactionManager(dataSource());
     }
     
+	@Value("${server.port}")
+	private String port;
+	
+//	@Value("${jedisCluster.nodesString}")
+//	private String jedisClusterNodesString;
+//    @Bean
+//	public JedisCluster JedisClusterFactory() {
+//    	System.out.println("jedisClusterNodesString--"+jedisClusterNodesString);
+//    	Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
+//    	
+//    	if(jedisClusterNodesString.length() > 0){
+//    		String [] jedisClusterNodesList = jedisClusterNodesString.split(",");
+//    		for (String hostAndPort : jedisClusterNodesList) {
+//    			jedisClusterNodes.add(new HostAndPort(hostAndPort.split(":")[0],
+//    					Integer.parseInt(hostAndPort.split(":")[1])));
+//    		}
+//    	}
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.5", 7001));
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.5", 7002));
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.6", 7003));
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.6", 7004));
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.7", 7005));
+////		jedisClusterNodes.add(new HostAndPort("192.168.1.7", 7006));
+//		JedisCluster  jedisCluster = new  JedisCluster(jedisClusterNodes,150,5000,1,"redis-pass" ,new GenericObjectPoolConfig());
+//		//下面错误示范
+////		JedisCluster jedisCluster = new new JedisCluster(jedisClusterNodes,1000, 3000,12,genericObjectPoolConfig);
+////		jedisCluster.auth("redis-pass");
+//		return jedisCluster;
+//	}
+
     
-    @Bean
-	public JedisCluster JedisClusterFactory() {
-		Set<HostAndPort> jedisClusterNodes = new HashSet<HostAndPort>();
-		jedisClusterNodes.add(new HostAndPort("192.168.1.5", 7001));
-		jedisClusterNodes.add(new HostAndPort("192.168.1.6", 7003));
-		jedisClusterNodes.add(new HostAndPort("192.168.1.7", 7005));
-//		JedisCluster jedisCluster = new JedisCluster(jedisClusterNodes);
-		JedisCluster jedisCluster = new  JedisCluster(jedisClusterNodes,150,5000,1,"redis-pass" ,new GenericObjectPoolConfig());
-
-		//下面错误示范
-//		JedisCluster jedisCluster = new new JedisCluster(jedisClusterNodes,1000, 3000,12,genericObjectPoolConfig);
-//		jedisCluster.auth("redis-pass");
-		
-		return jedisCluster;
-	}
-
     
     /**
      * 注册监听器
@@ -99,9 +115,6 @@ public class SayHelloServiceApplication {
     	servletListenerRegistrationBean.setListener(new InitListener());  
     	return servletListenerRegistrationBean;
     }
-	
-	@Value("${server.port}")
-	private String port;
 	
 	@RequestMapping("/sayHello")
 	@HystrixCommand(fallbackMethod = "sayHelloFallback")
